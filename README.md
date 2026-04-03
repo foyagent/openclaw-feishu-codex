@@ -16,6 +16,16 @@
 
 ## 安装与试用
 
+### 一行命令安装（推荐）
+
+```bash
+npx openclaw-codex-feishu install
+```
+
+该命令会自动执行插件安装与启用。
+
+### 本地开发安装
+
 ```bash
 npm install
 npm run typecheck
