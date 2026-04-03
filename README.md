@@ -2,9 +2,9 @@
 
 该仓库现在提供了可运行的生产实现骨架（不仅是文档草图），核心能力包括：
 
-- `/codex` 命令路由（`new/resume/status/detach/stop/raw/model/permissions/review/log`）
+- `/codex` 命令路由（`new/resume/status/detach/stop/steer/plan/raw/model/permissions/review/approve/replay/log`）
 - `codex_bridge_send` 工具（给主 agent 做轻量 handoff）
-- `codex app-server` `stdio` transport 与 JSON-RPC 请求/通知处理
+- `codex app-server` `stdio` transport 与 JSON-RPC 请求/通知处理（当前仅 stdio）
 - 绑定状态持久化（`bindings/*.json`）
 - turn 级 JSONL journal 落盘（`threads/<threadId>/turns/*.jsonl`）
 - raw chunk 渲染与 ANSI/`\r` 规范化
