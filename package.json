@@ -1,0 +1,45 @@
+{
+  "name": "openclaw-codex-feishu",
+  "version": "0.1.1",
+  "description": "OpenClaw native plugin scaffold for bridging Codex app-server with Feishu-first rendering.",
+  "type": "module",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "skills",
+    "docs/cards"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "validate:json": "python -m json.tool openclaw.plugin.json >/dev/null && python -m json.tool docs/cards/control-card.json >/dev/null && python -m json.tool docs/cards/approval-card.json >/dev/null && python -m json.tool docs/cards/turn-live-card.json >/dev/null"
+  },
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "codex",
+    "feishu"
+  ],
+  "license": "MIT",
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.41"
+  },
+  "devDependencies": {
+    "openclaw": "^2026.3.24-beta.2",
+    "typescript": "^5.8.3"
+  }
+}

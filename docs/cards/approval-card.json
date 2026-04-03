@@ -1,0 +1,21 @@
+{
+  "schema": "2.0",
+  "header": {
+    "title": { "tag": "plain_text", "content": "Codex 审批请求" },
+    "template": "orange"
+  },
+  "body": {
+    "elements": [
+      { "tag": "markdown", "content": "**RequestId**: `apr_001`\n**类型**: shell\n**命令**: `git push origin feat/codex`\n**原因**: 需要将修复提交到远端仓库" },
+      {
+        "tag": "action",
+        "actions": [
+          { "tag": "button", "text": { "tag": "plain_text", "content": "允许一次" }, "type": "primary", "value": { "a": "allow-once", "id": "apr_001" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "本会话总是允许" }, "type": "default", "value": { "a": "allow-always", "id": "apr_001" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "拒绝" }, "type": "danger", "value": { "a": "deny", "id": "apr_001" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "取消" }, "type": "default", "value": { "a": "cancel", "id": "apr_001" } }
+        ]
+      }
+    ]
+  }
+}
