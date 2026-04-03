@@ -68,7 +68,7 @@ export class BridgeRuntime implements ChunkSink {
   async handleCodexCommand(identity: BindingIdentity, argsRaw: string): Promise<string> {
     const args = argsRaw.trim();
     if (!args) {
-      return "可用子命令: new | resume | status | detach | stop | raw | model | permissions | review | log";
+      return "可用子命令: new | resume | status | detach | stop | steer | plan | raw | model | permissions | review | approve | replay | log";
     }
 
     const [subcommand, ...rest] = args.split(/\s+/g);
@@ -85,6 +85,10 @@ export class BridgeRuntime implements ChunkSink {
         return this.handleDetach(identity);
       case "stop":
         return this.handleStop(identity);
+      case "steer":
+        return this.handleSteer(identity, tail);
+      case "plan":
+        return this.handlePlan(identity, tail);
       case "raw":
         return this.handleRaw(identity, tail);
       case "model":
@@ -93,11 +97,38 @@ export class BridgeRuntime implements ChunkSink {
         return this.handlePermissions(identity, tail);
       case "review":
         return this.handleReview(identity, tail);
+      case "approve":
+        return this.handleApprove(identity, tail);
+      case "replay":
+        return this.handleReplay(identity, tail);
       case "log":
         return `日志目录: ${path.join(this.config.dataDir, "threads")}`;
       default:
         return this.dispatchUserInput(identity, args);
     }
+  }
+
+  private async handleSteer(identity: BindingIdentity, text: string): Promise<string> {
+    if (!text) return "用法: /codex steer <text>";
+
+    const state = await this.bindingStore.load(identity);
+    if (!state.threadId || !state.activeTurnId) return "当前没有运行中的 turn。";
+
+    await this.client.turnSteer(state.threadId, state.activeTurnId, text);
+    await this.journalStore.appendEvent({
+      ts: Date.now(),
+      bindingKey: state.bindingKey,
+      threadId: state.threadId,
+      turnId: state.activeTurnId,
+      direction: "out",
+      raw: { method: "turn/steer", params: { input: text } }
+    });
+    return `已发送 steer 指令: ${text.slice(0, 100)}`;
+  }
+
+  private async handlePlan(identity: BindingIdentity, goal: string): Promise<string> {
+    const input = goal ? `请先给出执行计划，再开始执行。\n\n目标：${goal}` : "请先给出执行计划，再开始执行。";
+    return this.dispatchUserInput(identity, input);
   }
 
   private async handleNew(identity: BindingIdentity, workspaceRoot: string): Promise<string> {
@@ -194,6 +225,45 @@ export class BridgeRuntime implements ChunkSink {
     return "已提交 review 请求。";
   }
 
+  private async handleApprove(identity: BindingIdentity, tail: string): Promise<string> {
+    const [requestId, action, ...rest] = tail.split(/\s+/g).filter(Boolean);
+    if (!requestId || !action) {
+      return "用法: /codex approve <requestId> <allow-once|allow-always|deny|cancel|amend> [amendedCommand]";
+    }
+
+    const allowedActions = new Set(["allow-once", "allow-always", "deny", "cancel", "amend"]);
+    if (!allowedActions.has(action)) {
+      return "approve action 仅支持: allow-once | allow-always | deny | cancel | amend";
+    }
+
+    const amendedCommand = rest.join(" ").trim() || undefined;
+    await this.client.approve(requestId, action, amendedCommand);
+
+    const state = await this.bindingStore.load(identity);
+    if (state.threadId) {
+      await this.journalStore.appendEvent({
+        ts: Date.now(),
+        bindingKey: state.bindingKey,
+        threadId: state.threadId,
+        turnId: state.activeTurnId ?? "unknown",
+        direction: "out",
+        raw: { method: "approval/respond", params: { requestId, action, amendedCommand } }
+      });
+    }
+
+    return `已提交审批响应: ${action} (${requestId})`;
+  }
+
+  private async handleReplay(identity: BindingIdentity, turnId: string): Promise<string> {
+    const state = await this.bindingStore.load(identity);
+    if (!state.threadId) return "请先执行 /codex new 或 /codex resume";
+
+    const targetTurnId = turnId || state.activeTurnId;
+    if (!targetTurnId) return "用法: /codex replay <turnId>";
+
+    return `turn 日志路径: ${path.join(this.config.dataDir, "threads", state.threadId, "turns", `${targetTurnId}.jsonl`)}`;
+  }
+
   private async dispatchUserInput(identity: BindingIdentity, text: string): Promise<string> {
     return this.queue.enqueue(`${identity.channel}:${identity.accountId}:${identity.peerKey}`, async () => {
       const state = await this.bindingStore.load(identity);
@@ -201,7 +271,9 @@ export class BridgeRuntime implements ChunkSink {
         return "当前未绑定线程，请先执行 /codex new";
       }
 
-      const turnResult = (await this.client.turnStart(state.threadId, text)) as { turnId?: string };
+      const turnResult = (await this.client.turnStart(state.threadId, text, {
+        approvalMode: state.approvalMode
+      })) as { turnId?: string };
       const turnId = turnResult.turnId ?? "";
 
       await this.bindingStore.patch(identity, {
@@ -240,9 +312,26 @@ export class BridgeRuntime implements ChunkSink {
 
       const maybeText = this.extractRenderableText(method, params);
       if (maybeText) {
-        await this.renderer.push(bindingKey, maybeText, method === "turn/completed" || method === "error");
+        const state = await this.bindingStore.load(this.identityFromBindingKey(bindingKey));
+        if (this.shouldRenderRaw(state.rawMode, method)) {
+          await this.renderer.push(bindingKey, maybeText, method === "turn/completed" || method === "error");
+        }
       }
     }
+  }
+
+  private identityFromBindingKey(key: string): BindingIdentity {
+    const [channel, accountId, peerKey] = key.split(":");
+    return { channel: channel ?? "feishu", accountId: accountId ?? "unknown", peerKey: peerKey ?? "unknown" };
+  }
+
+  private shouldRenderRaw(rawMode: BindingState["rawMode"], method: string): boolean {
+    if (rawMode === "off") return method === "error" || method === "turn/completed";
+    if (rawMode === "all") return true;
+
+    // cli: only CLI-like text deltas and terminal events.
+    if (method === "error" || method === "turn/completed") return true;
+    return method.includes("outputDelta") || method.includes("summaryTextDelta");
   }
 
   private extractRenderableText(method: string, params: Record<string, unknown>): string | undefined {

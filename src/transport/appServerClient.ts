@@ -32,8 +32,14 @@ export class AppServerClient {
     return this.transport.request("thread/resume", { threadId });
   }
 
-  turnStart(threadId: string, text: string): Promise<unknown> {
-    return this.transport.request("turn/start", { threadId, input: text });
+  turnStart(
+    threadId: string,
+    text: string,
+    options?: {
+      approvalMode?: "default" | "fullAccess";
+    }
+  ): Promise<unknown> {
+    return this.transport.request("turn/start", { threadId, input: text, approvalMode: options?.approvalMode });
   }
 
   turnSteer(threadId: string, turnId: string, text: string): Promise<unknown> {

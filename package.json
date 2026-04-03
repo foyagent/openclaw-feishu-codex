@@ -4,11 +4,15 @@
   "description": "OpenClaw native plugin scaffold for bridging Codex app-server with Feishu-first rendering.",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "openclaw-codex-feishu": "./scripts/install.mjs"
+  },
   "files": [
     "dist",
     "openclaw.plugin.json",
     "skills",
-    "docs/cards"
+    "docs/cards",
+    "scripts/install.mjs"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
