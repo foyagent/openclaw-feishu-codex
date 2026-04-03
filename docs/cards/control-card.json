@@ -1,0 +1,26 @@
+{
+  "schema": "2.0",
+  "config": { "wide_screen_mode": true },
+  "header": {
+    "title": { "tag": "plain_text", "content": "Codex 控制台" },
+    "template": "blue"
+  },
+  "body": {
+    "elements": [
+      { "tag": "markdown", "content": "**状态**: 运行中\n**Thread**: `thr_123`\n**工作目录**: `/Users/me/work`\n**模型**: `gpt-5.4`\n**Raw**: `cli`" },
+      { "tag": "hr" },
+      { "tag": "markdown", "content": "**最近命令**: `pnpm test`\n**Todo**: 2/5 完成\n**待审批**: 1" },
+      {
+        "tag": "action",
+        "actions": [
+          { "tag": "button", "text": { "tag": "plain_text", "content": "新建" }, "type": "default", "value": { "a": "new" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "继续" }, "type": "default", "value": { "a": "resume" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "停止" }, "type": "danger", "value": { "a": "stop" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "Review" }, "type": "default", "value": { "a": "review" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "日志" }, "type": "default", "value": { "a": "log" } },
+          { "tag": "button", "text": { "tag": "plain_text", "content": "Detach" }, "type": "default", "value": { "a": "detach" } }
+        ]
+      }
+    ]
+  }
+}
