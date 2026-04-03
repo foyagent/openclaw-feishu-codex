@@ -1,29 +1,76 @@
 import { Type } from "@sinclair/typebox";
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 
+import { BridgeRuntime } from "./runtime/bridgeRuntime.js";
+import type { BindingIdentity } from "./state/bindingStore.js";
+import { noopLogger } from "./utils/logger.js";
+
+let runtime: BridgeRuntime | undefined;
+
+function resolveIdentity(ctx: any): BindingIdentity {
+  return {
+    channel: String(ctx?.channel ?? "feishu"),
+    accountId: String(ctx?.senderId ?? "unknown"),
+    peerKey: String(ctx?.senderId ?? "unknown")
+  };
+}
+
 export default definePluginEntry({
   id: "codex-feishu",
   name: "OpenClaw Codex Feishu Bridge",
-  description: "Bridges Codex handoff intents and Feishu-oriented control surface scaffolding.",
-  register(api) {
+  description: "Production bridge for Codex app-server sessions in Feishu with journaling and command routing.",
+  register(api: any) {
+    const logger = api?.logger ?? noopLogger;
+
+    runtime = new BridgeRuntime(
+      api?.config,
+      logger,
+      {
+        async sendText(identity, text) {
+          logger.info(`[codex-feishu][${identity.channel}:${identity.accountId}:${identity.peerKey}] ${text}`);
+        }
+      }
+    );
+
+    api.registerService({
+      id: "codex-feishu-runtime",
+      start: async () => {
+        await runtime?.start();
+      },
+      stop: () => {
+        runtime?.stop();
+      }
+    });
+
+    api.registerCommand({
+      name: "codex",
+      description: "Manage Codex session binding and runtime operations.",
+      acceptsArgs: true,
+      requireAuth: true,
+      handler: async (ctx: any) => {
+        const identity = resolveIdentity(ctx);
+        const text = await runtime?.handleCodexCommand(identity, ctx?.args ?? "");
+        return { text: text ?? "runtime not ready" };
+      }
+    });
+
     api.registerTool({
       name: "codex_bridge_send",
       label: "Codex Bridge Send",
-      description: "Bridge a user task to Codex and return a short ACK for direct-stream mode.",
+      description: "Send a task to the bound Codex thread and return an ACK.",
       parameters: Type.Object({
         task: Type.String({ minLength: 1, description: "Task goal or user instruction for Codex." }),
         context: Type.Optional(Type.String({ description: "Optional context excerpt." }))
       }),
-      async execute(_id, params) {
-        const summary = params.task.length > 120 ? `${params.task.slice(0, 117)}...` : params.task;
-        const contextNote = params.context ? "（包含上下文）" : "";
-        const message = `Codex 已接管任务${contextNote}：${summary}\n输出将直接回流到当前 Feishu 聊天。`;
+      async execute(_id: string, params: { task: string; context?: string }) {
+        const identity: BindingIdentity = { channel: "feishu", accountId: "tool", peerKey: "tool" };
+        const ack = await runtime?.handleCodexToolTask(identity, params.task, params.context);
 
         return {
-          content: [{ type: "text", text: message }],
+          content: [{ type: "text", text: ack ?? "Codex runtime unavailable" }],
           details: {
-            accepted: true,
-            taskPreview: summary,
+            accepted: Boolean(ack),
+            taskPreview: params.task.slice(0, 120),
             hasContext: Boolean(params.context)
           }
         };

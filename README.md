@@ -1,18 +1,20 @@
-# OpenClaw × Codex × Feishu v1 Draft Artifacts
+# OpenClaw × Codex × Feishu Plugin
 
-这个仓库现在已经是一个**可安装试用**的 OpenClaw 原生插件脚手架（MVP）：
+该仓库现在提供了可运行的生产实现骨架（不仅是文档草图），核心能力包括：
 
-- 提供合法的 `openclaw.plugin.json`（含 `configSchema`）
-- 提供可编译的插件入口 `src/index.ts`
-- 注册可调用工具 `codex_bridge_send`
-- 附带 `/codex` 命令协议草案、绑定状态类型、Feishu 卡片草图与 skill 草案
+- `/codex` 命令路由（`new/resume/status/detach/stop/raw/model/permissions/review/log`）
+- `codex_bridge_send` 工具（给主 agent 做轻量 handoff）
+- `codex app-server` `stdio` transport 与 JSON-RPC 请求/通知处理
+- 绑定状态持久化（`bindings/*.json`）
+- turn 级 JSONL journal 落盘（`threads/<threadId>/turns/*.jsonl`）
+- raw chunk 渲染与 ANSI/`\r` 规范化
 
 ## 运行环境
 
 - Node.js **>= 22.12**（OpenClaw CLI 要求）
 - npm 10+
 
-## 快速试用
+## 安装与试用
 
 ```bash
 npm install
@@ -23,10 +25,15 @@ openclaw plugins install .
 openclaw plugins enable codex-feishu
 ```
 
-安装后可先做最小验证：
+## 快速验证
 
-1. 在 OpenClaw 中触发工具 `codex_bridge_send`
-2. 输入 `task` 参数（例如“修复登录接口 500”）
-3. 观察返回 ACK：`Codex 已接管任务...输出将直接回流到当前 Feishu 聊天。`
+1. 在 Feishu 聊天发送 `/codex new /path/to/workspace`
+2. 发送普通任务文本（attached 模式会转为 `turn/start`）
+3. 发送 `/codex status` 查看绑定状态
+4. 发送 `/codex stop` 中断当前 turn
+5. 查看 `.openclaw-codex-feishu/threads/*/turns/*.jsonl` 确认日志落盘
 
-> 说明：当前版本是“可安装试用”的桥接基础骨架，不包含完整 app-server 会话管理、审批桥、日志落盘与渲染调度实现。
+## 当前实现范围
+
+已实现生产必需基础链路：会话绑定、transport、命令路由、日志先写后渲染。
+若需要进一步增强，可继续补充：Feishu 卡片 API 实发、审批卡按钮回传、diff 文件上传等 UI 细节。
