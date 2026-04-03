@@ -1,0 +1,123 @@
+{
+  "id": "codex-feishu",
+  "name": "OpenClaw Codex Feishu Bridge",
+  "version": "0.1.1",
+  "description": "Feishu-first Codex app-server bridge plugin with control cards, raw chunk streaming, and JSONL journaling.",
+  "skills": [
+    "skills/codex-bridge"
+  ],
+  "uiHints": {
+    "adminLabel": "Codex × Feishu",
+    "category": "automation",
+    "tags": [
+      "codex",
+      "feishu",
+      "bridge"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "transport": {
+        "type": "string",
+        "enum": [
+          "stdio",
+          "websocket"
+        ],
+        "default": "stdio"
+      },
+      "command": {
+        "type": "string",
+        "default": "codex"
+      },
+      "args": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [
+          "app-server",
+          "--listen",
+          "stdio://"
+        ]
+      },
+      "defaultWorkspaceDir": {
+        "type": "string"
+      },
+      "defaultModel": {
+        "type": "string",
+        "default": "gpt-5.4"
+      },
+      "attachModeDefault": {
+        "type": "string",
+        "enum": [
+          "attached",
+          "toolOnly"
+        ],
+        "default": "attached"
+      },
+      "rawModeDefault": {
+        "type": "string",
+        "enum": [
+          "off",
+          "cli",
+          "all"
+        ],
+        "default": "cli"
+      },
+      "feishu": {
+        "type": "object",
+        "properties": {
+          "pinControlCard": {
+            "type": "boolean",
+            "default": true
+          },
+          "rotateControlCardAfterDays": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 12
+          },
+          "controlCardEditMinIntervalMs": {
+            "type": "integer",
+            "minimum": 250,
+            "default": 1000
+          },
+          "streamFlushMs": {
+            "type": "integer",
+            "minimum": 100,
+            "default": 750
+          },
+          "streamChunkChars": {
+            "type": "integer",
+            "minimum": 400,
+            "default": 1500
+          },
+          "liveTailChars": {
+            "type": "integer",
+            "minimum": 400,
+            "default": 1200
+          },
+          "sendJsonlOnTurnComplete": {
+            "type": "boolean",
+            "default": true
+          },
+          "sendReadableTranscriptOnTurnComplete": {
+            "type": "boolean",
+            "default": false
+          },
+          "buttonsOnly": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "transport",
+      "command",
+      "args"
+    ],
+    "additionalProperties": false
+  }
+}

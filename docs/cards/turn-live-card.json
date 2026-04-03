@@ -1,0 +1,15 @@
+{
+  "schema": "2.0",
+  "header": {
+    "title": { "tag": "plain_text", "content": "Codex 当前 Turn 实时流" },
+    "template": "wathet"
+  },
+  "body": {
+    "elements": [
+      { "tag": "markdown", "content": "**Turn**: `turn_456`\n**阶段**: 执行中" },
+      { "tag": "markdown", "content": "**Agent Tail**\n```\n已定位到错误来源，正在修复并补充测试。\n```" },
+      { "tag": "markdown", "content": "**CLI Tail**\n```\n$ pnpm test\n PASS src/state/schemas.test.ts\n```" },
+      { "tag": "markdown", "content": "**Plan**\n1. 定位问题 ✅\n2. 修改实现 ⏳\n3. 增加回归测试 ⏳" }
+    ]
+  }
+}
