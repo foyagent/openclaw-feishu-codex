@@ -21,8 +21,7 @@
       "transport": {
         "type": "string",
         "enum": [
-          "stdio",
-          "websocket"
+          "stdio"
         ],
         "default": "stdio"
       },
@@ -113,11 +112,6 @@
         "additionalProperties": false
       }
     },
-    "required": [
-      "transport",
-      "command",
-      "args"
-    ],
     "additionalProperties": false
   }
 }

@@ -2,7 +2,7 @@ export type AttachMode = "attached" | "toolOnly";
 export type RawMode = "off" | "cli" | "all";
 
 export interface PluginConfig {
-  transport: "stdio" | "websocket";
+  transport: "stdio";
   command: string;
   args: string[];
   defaultWorkspaceDir?: string;
